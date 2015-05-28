@@ -18,7 +18,7 @@
 require 'optparse'
 require 'fileutils'
 
-VERSION='3.0.0'
+VERSION='3.0.1'
 
 
 ## ~~~~~~~ CONFIG - WHERE ARE YOUR TOOLS ~~~~~~ ##
@@ -293,7 +293,7 @@ def samba_check(sce_share=nil)
 end
 
 
-# Create a new share in the smb.conf as sce_share, and copy files to the location setup in SMB_SHARE_LOC
+# Create a new share in the smb.conf as declared in SMB_SHARE_NAME, and copy files to the location setup in SMB_SHARE_LOC
 def samba_setup
 	if File.open('/etc/samba/smb.conf').read() !~ /^\[#{SMB_SHARE_NAME}\]/
 		puts "[*]".green + "\tCreating #{SMB_SHARE_NAME} in samba config"
