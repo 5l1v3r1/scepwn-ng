@@ -270,7 +270,7 @@ def samba_check(sce_share=nil)
 	shares.each { |share|
 		share = share.delete "[]\n"
 		puts "[+]\tChecking #{share} share"
-		def_smb_check = `smbclient -N -g --command=dir //127.0.0.1/#{share}/ 2>&1 | grep #{SCE_NAME}`
+		def_smb_check = `smbclient -N -g --command=dir //localhost/#{share}/ 2>&1 | grep #{SCE_NAME}`
 		if def_smb_check.empty?
 			puts "[x]".red + "\tCan't find #{SCE_NAME} on //localhost/#{share}"
 			$sce_share = nil
