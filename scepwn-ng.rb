@@ -6,19 +6,12 @@
 #
 # Local admin is required for winexe/psexec to start their respective service, and should be
 # considered a prerequisite for using this tool. 
-#
-# Basic Setup for a kali box:
-#   cd /opt
-#   git clone https://github.com/CoreSecurity/impacket.git
-#   python impacket/setup.py install
-#   git clone https://github.com/inquisb/shellcodeexec.git
-#
-# If not using Kali, you will also need to install metasploit and winexe
+
 
 require 'optparse'
 require 'fileutils'
 
-VERSION='3.0.1'
+VERSION='3.0.2'
 
 
 ## ~~~~~~~ CONFIG - WHERE ARE YOUR TOOLS ~~~~~~ ##
