@@ -9,11 +9,12 @@ scepwn-ng is a wrapper script for launching winexe/psexec at a target, which the
 INSTALL
 =======
 Basic Setup for a kali box (skyfire):
+'''
 		$ cd /opt
 		$ git clone https://github.com/CoreSecurity/impacket.git
 		$ cd impacket; python setup.py install
 		$ cd /opt; git clone https://github.com/inquisb/shellcodeexec.git
-
+'''
 If not using Kali, you will also need to install metasploit and winexe, as well as possibly modify the tool locations.
 
 USAGE
