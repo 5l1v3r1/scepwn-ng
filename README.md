@@ -18,15 +18,18 @@ If not using Kali, you will also need to install metasploit and winexe, as well 
 
 USAGE
 =====
+
 		./scepwn-ng.rb [optional]
 
 **Example:**
+
 		./scepwn-ng.rb -u 'Administrator%Password1' -t 10.1.1.1 -s psexec -p 4444
 
 Note - All options are just that.. optional. If you leave anything out it will ask you for it.
 
 
 **Options:**
+
 		-t, --target TARGET              
 																		Target IP address
 		-u, --user CREDENTIALS           
