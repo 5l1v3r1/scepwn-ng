@@ -15,7 +15,18 @@ Basic Setup for a kali box (skyfire):
 		$ cd impacket; python setup.py install
 		$ cd /opt; git clone https://github.com/inquisb/shellcodeexec.git
 ```
-If not using Kali, you will also need to install metasploit and winexe, as well as possibly modify the tool locations.
+If not using Kali, you will also need to install metasploit and winexe, as well as manually setup the samba share:
+
+Add a share to your samba conf - usually located at /etc/samba/smb.conf
+```
+[sce_share]
+		browseable = no
+		path = /var/sce_share
+		guest ok = yes
+		read only = no
+		create mask = 0600
+		directory mask = 0700
+```
 
 USAGE
 =====

