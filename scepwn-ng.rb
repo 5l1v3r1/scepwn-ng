@@ -128,7 +128,7 @@ if RUBY_PLATFORM =~ /linux/
 		if os =~ /1/
 			$smbd_service = "samba"
 			$nmbd_service = "samba"
-		elsif os =~ /2/
+		else
 			$smbd_service = "smbd"
 			$nmbd_service = "nmbd"
 		end
